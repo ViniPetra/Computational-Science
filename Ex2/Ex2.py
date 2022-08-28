@@ -1,8 +1,3 @@
 import numpy as np
 
-alturas = np.loadtxt("altura.txt")
-anos = np.loadtxt("anos.txt")
-
-avg = np.average(alturas[np.where((anos >= 1998) & (anos <= 2005))])
-
-print(avg)
+print(np.average(np.loadtxt("altura.txt")[np.where((np.loadtxt("anos.txt") >= 1998) & (np.loadtxt("anos.txt") <= 2005))]))
