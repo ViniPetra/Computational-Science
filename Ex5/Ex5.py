@@ -1,5 +1,7 @@
 import pandas as pd
 from sklearn import linear_model
+from sklearn.metrics import r2_score
+from sklearn.model_selection import train_test_split
 
 dataset = pd.read_csv("Ex5/diamonds.csv")
 
@@ -42,9 +44,16 @@ x = dataset[["carat", "cut", "color", "clarity"]]
 #valor dependente
 y = dataset[["price"]]
 
+#Treinamento e testes
+xTreino, xTeste, yTreino, yTeste = train_test_split(x, y, test_size=0.2)
+
 regression = linear_model.LinearRegression()
-regression.fit(x.values, y.values)
 
-predDiamondPrice = regression.predict([[3, 1, 5, 4]])
+regression.fit(xTreino, yTreino)
 
-print(predDiamondPrice)
+predDiamondPrice = regression.predict(xTeste)
+
+#R² dos coeficientes
+r2 = r2_score(yTeste, predDiamondPrice)
+
+print(r2)
