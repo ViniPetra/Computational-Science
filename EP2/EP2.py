@@ -38,10 +38,10 @@ def cross_entropy(n, p, y):
     return (1 / n) * (np.sum(-y * np.log(p)) - np.sum((1 - y) * np.log(1 - p)))
 
 
-def descida_gradiente(x1, x2, y, iteracao=10000, alfa=0.001, limite_parada=1e-6):
-    a = 1
-    b = 32
-    c = 5
+def descida_gradiente(x1, x2, y, iteracao=10000, alfa=1e-6, limite_parada=1e-6):
+    a = 0.02
+    b = 0.03
+    c = 4
     n = float(len(x1))
 
     perdas = []
@@ -55,7 +55,7 @@ def descida_gradiente(x1, x2, y, iteracao=10000, alfa=0.001, limite_parada=1e-6)
         perda_atual = cross_entropy(n, p, y)
 
         if abs(perda_anterior - perda_atual) <= limite_parada:
-            return perdas, variacao_a, variacao_b
+            return a, b, c, perdas, variacao_a, variacao_b
 
         perda_anterior = perda_atual
 
@@ -70,7 +70,7 @@ def descida_gradiente(x1, x2, y, iteracao=10000, alfa=0.001, limite_parada=1e-6)
         a = a - (alfa * derivada_a)
         b = b - (alfa * derivada_b)
         c = c - (alfa * derivada_c)
-    return perdas, variacao_a, variacao_b
+    return a, b, c, perdas, variacao_a, variacao_b
 
 
 t_perdas = []
@@ -90,7 +90,7 @@ def teste(x1, x2, y, iteracoes, alfas, perdas2):
         for alfa in alfas:
             for i in iteracoes:
                 print(p, alfa, i)
-                perdas, variacao_a, variacao_b = descida_gradiente(x1, x2, y, iteracao=i, alfa=alfa, limite_parada=p)
+                a, b, c, perdas, variacao_a, variacao_b = descida_gradiente(x1, x2, y, iteracao=i, alfa=alfa, limite_parada=p)
                 for item1 in variacao_a:
                     t_variacao_a.append(item1)
                     t_perdaConfig.append(p)
@@ -101,26 +101,37 @@ def teste(x1, x2, y, iteracoes, alfas, perdas2):
                 for item3 in perdas:
                     t_perdas.append(item3)
 
+
 print("Inciando testes")
 
-'''
+
 tempoInicio = datetime.datetime.now()
 headers = {"Content-Type":"application/json"}
 data = json.dumps({"content":"Novo teste iniciado em {}".format(tempoInicio)})
 requests.post(url="https://discord.com/api/webhooks/1041753935377088552/Wo1OecPSo7kcNSnULi_RSDgAYE6i_glFoZo_5046Pj2POXbIsDN_MkydhJ4iHlFjv3Ku", headers=headers, data=data)
-'''
+
 
 teste(x1, x2, y, iteracoes, alfas, perdas2)
 
-'''
+a, b, c, perdas, variacao_a, variacao_b = descida_gradiente(x1, x2, y, iteracao=10000, alfa=1e-6, limite_parada=1e-6)
+print(f"A: {a}\nB: {b}\nC: {c}")
+
+
 tempoFinal = datetime.datetime.now()
 tempo = tempoFinal - tempoInicio
 headers = {"Content-Type":"application/json"}
 data = json.dumps({"content":"Teste finalizado em {}".format(tempo)})
 requests.post(url="https://discord.com/api/webhooks/1041753935377088552/Wo1OecPSo7kcNSnULi_RSDgAYE6i_glFoZo_5046Pj2POXbIsDN_MkydhJ4iHlFjv3Ku", headers=headers, data=data)
-'''
+
 
 print("Teste finalizado")
+
+fig, graph = plt.subplots()
+index = np.arange(len(perdas))
+graph.plot(index, perdas)
+graph.set_xlabel(" Iterações ")
+graph.set_ylabel(" Erro ")
+fig.show()
 
 testeFrame = pd.DataFrame({
     "Config Perda" : t_perdaConfig,
