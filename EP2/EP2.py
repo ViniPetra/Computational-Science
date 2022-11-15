@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import requests, json, datetime
 
 notas = pd.read_csv("https://raw.githubusercontent.com/celsocrivelaro/simple-datasets/main/notas-estudantes.csv")
 
@@ -104,25 +103,10 @@ def teste(x1, x2, y, iteracoes, alfas, perdas2):
 
 print("Inciando testes")
 
-
-tempoInicio = datetime.datetime.now()
-headers = {"Content-Type":"application/json"}
-data = json.dumps({"content":"Novo teste iniciado em {}".format(tempoInicio)})
-requests.post(url="https://discord.com/api/webhooks/1041753935377088552/Wo1OecPSo7kcNSnULi_RSDgAYE6i_glFoZo_5046Pj2POXbIsDN_MkydhJ4iHlFjv3Ku", headers=headers, data=data)
-
-
 teste(x1, x2, y, iteracoes, alfas, perdas2)
 
 a, b, c, perdas, variacao_a, variacao_b = descida_gradiente(x1, x2, y, iteracao=10000, alfa=1e-6, limite_parada=1e-6)
 print(f"A: {a}\nB: {b}\nC: {c}")
-
-
-tempoFinal = datetime.datetime.now()
-tempo = tempoFinal - tempoInicio
-headers = {"Content-Type":"application/json"}
-data = json.dumps({"content":"Teste finalizado em {}".format(tempo)})
-requests.post(url="https://discord.com/api/webhooks/1041753935377088552/Wo1OecPSo7kcNSnULi_RSDgAYE6i_glFoZo_5046Pj2POXbIsDN_MkydhJ4iHlFjv3Ku", headers=headers, data=data)
-
 
 print("Teste finalizado")
 
