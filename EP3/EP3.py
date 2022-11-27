@@ -127,16 +127,35 @@ class Testes:
             soma_nao_esperaram = df[df['Tamanho'] >= self.limite_desistentes]['Delta'].sum()
             return round((soma_nao_esperaram / self.tempo_simulacao) * 100, 2)
 
-        print('O tempo médio na fila é de %.2f' % (np.mean(self.in_queue)))
-        print('O tempo médio no sistema é %.2f' % (np.mean(self.in_system)))
-        print('O número médio de carros na fila é %.2f' % (media_fila(frame)))
-        print('A utilizacao do serviço é %.2f' % (utilizacao_servico(frame)))
-        print('A probabilidade de carros que não podem esperar na fila é %.2f' % (porcetagem_de_nao_esperaram(frame)))
+        tempo_medio_fila = np.mean(self.in_queue)
+        tempo_medio_sistema = np.mean(self.in_system)
+        media_carros_fila = media_fila(frame)
+        utilizacao_do_servico = utilizacao_servico(frame)
+        prob_desistencia = porcetagem_de_nao_esperaram(frame)
+
+        info = {
+            "tempo_medio_fila": tempo_medio_fila,
+            "tempo_medio_sistema": tempo_medio_sistema,
+            "media_carros_fila": media_carros_fila,
+            "utilizacao_do_servico": utilizacao_do_servico,
+            "prob_desistencia": prob_desistencia
+        }
+
+        print("Informações do teste {}".format(self))
+        print('O tempo médio na fila é de %.2f' % tempo_medio_fila)
+        print('O tempo médio no sistema é %.2f' % tempo_medio_sistema)
+        print('O número médio de carros na fila é %.2f' % media_carros_fila)
+        print('A utilizacao do serviço é %.2f' % utilizacao_do_servico)
+        print('A probabilidade de carros que não podem esperar na fila é %.2f' % prob_desistencia)
+
+        return info
 
     def master(self):
         self.run_env()
         self.frame()
-        self.plot()
+        # self.plot()
+        des = self.desistencia()
+        return des
 
 
 def distribuicao_chegada_de_carros(teste: Testes):
@@ -180,7 +199,42 @@ def cobranca(id_carro, horario_chegada, teste: Testes):
 
 
 teste1 = Testes(2, 20, 0.5, 10, 200, 4)
+teste1.master()
+
+"""
 print(teste1)
 teste1.run_env()
 teste1.plot()
 teste1.desistencia()
+"""
+
+
+def run(cenarios: list[Testes]):
+    desistencias = []
+    for a in cenarios:
+        des = a.master()
+        desistencias.append(des)
+    final = pd.DataFrame(desistencias)
+    return final
+
+
+Cenarios = [
+    Testes(1, 20, 0.5, 10, 200, 4),
+    Testes(5, 20, 0.5, 10, 200, 4),
+    Testes(10, 20, 0.5, 10, 200, 4),
+    Testes(1, 10, 0.5, 10, 200, 4),
+    Testes(1, 20, 0.5, 10, 200, 4),
+    Testes(1, 30, 0.5, 10, 200, 4),
+    Testes(1, 20, 1, 10, 200, 4),
+    Testes(1, 20, 2, 10, 200, 4),
+    Testes(1, 20, 0.5, 5, 200, 4),
+    Testes(1, 20, 0.5, 20, 200, 4),
+    Testes(1, 20, 0.5, 10, 100, 4),
+    Testes(1, 20, 0.5, 10, 300, 4),
+]
+
+res = run(Cenarios)
+
+res.to_csv('D:/Repositórios/PI4-Computacao-Cientifica/EP3/final.csv')
+
+print(res)
