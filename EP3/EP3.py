@@ -16,12 +16,13 @@ from scipy.stats import norm, expon
 
 class Testes:
     def __init__(self, carros_por_tempo, tempo_pedagio, desvio_tempo_pedagio, cabines_abertas,
-                 tempo_simulacao):
+                 tempo_simulacao, limite_distentes):
         self.carros_por_tempo = carros_por_tempo
         self.tempo_pedagio = tempo_pedagio
         self.desvio_tempo_pedagio = desvio_tempo_pedagio
         self.cabines_abertas = cabines_abertas
         self.tempo_simulacao = tempo_simulacao
+        self.limite_desistentes = limite_distentes
 
         self.chegadas = []
         self.saidas = []
@@ -74,15 +75,6 @@ class Testes:
         self.in_system.append(tempo_total)
 
     def frame(self):
-        """
-        df = pd.DataFrame({
-            "Horário": self.horarios_nas_filas,
-            "Tamanho": self.tamanho_da_fila,
-            "Chegadas": self.chegadas,
-            "Partidas": self.saidas
-        })
-        return df
-        """
         df1 = pd.DataFrame(self.horarios_nas_filas, columns=['Horário'])
         df2 = pd.DataFrame(self.tamanho_da_fila, columns=['Tamanho'])
         df3 = pd.DataFrame(self.chegadas, columns=['Chegadas'])
@@ -116,6 +108,30 @@ class Testes:
 
         fig.show()
         fig2.show()
+
+    def desistencia(self):
+        frame = self.frame()
+
+        def media_fila(df):
+            df['Delta'] = df['Horário'].shift(-1) - df['Horário']
+            df = df[0:-1]
+            return np.average(df['Tamanho'], weights=df['Delta'])
+
+        def utilizacao_servico(df):
+            soma_servico_livre = df[df['Tamanho'] == 0]['Delta'].sum()
+            primeiro_evento = df['Horário'].iloc[0]
+            soma_servico_livre = soma_servico_livre + primeiro_evento
+            return round((1 - soma_servico_livre / self.tempo_simulacao) * 100, 2)
+
+        def porcetagem_de_nao_esperaram(df):
+            soma_nao_esperaram = df[df['Tamanho'] >= self.limite_desistentes]['Delta'].sum()
+            return round((soma_nao_esperaram / self.tempo_simulacao) * 100, 2)
+
+        print('O tempo médio na fila é de %.2f' % (np.mean(self.in_queue)))
+        print('O tempo médio no sistema é %.2f' % (np.mean(self.in_system)))
+        print('O número médio de carros na fila é %.2f' % (media_fila(frame)))
+        print('A utilizacao do serviço é %.2f' % (utilizacao_servico(frame)))
+        print('A probabilidade de carros que não podem esperar na fila é %.2f' % (porcetagem_de_nao_esperaram(frame)))
 
     def master(self):
         self.run_env()
@@ -163,8 +179,8 @@ def cobranca(id_carro, horario_chegada, teste: Testes):
         teste.calcula_tempo_no_sistema(horario_chegada)
 
 
-teste1 = Testes(2, 20, 0.5, 10, 200)
+teste1 = Testes(2, 20, 0.5, 10, 200, 4)
 print(teste1)
-print(teste1.config())
 teste1.run_env()
 teste1.plot()
+teste1.desistencia()
