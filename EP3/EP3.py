@@ -1,17 +1,16 @@
-"""
-Descrição da atividade
-CASO = "Pagamento de pedágio"
-FILAS = "Carros para pagar"
-SERVICO = "Cabines abertas"
-INTEGRANTES = ["Julia mendes", "Vinicius Petratti", "Yuri Barbosa"]
-"""
-
 import simpy as sp
 import numpy as np
 import pandas as pd
 import json
 import matplotlib.pyplot as plt
 from scipy.stats import norm, expon
+
+WhatAndWho = {
+    "CASO": "Pagamento de pedágio",
+    "FILAS": "Carros para pagar",
+    "SERVICO": "Cabines abertas",
+    "INTEGRANTES": ["Julia mendes", "Vinicius Petratti", "Yuri Barbosa"]
+}
 
 
 class Testes:
@@ -198,9 +197,6 @@ def cobranca(id_carro, horario_chegada, teste: Testes):
         teste.calcula_tempo_no_sistema(horario_chegada)
 
 
-teste1 = Testes(2, 20, 0.5, 10, 200, 4)
-teste1.master()
-
 """
 print(teste1)
 teste1.run_env()
@@ -231,6 +227,30 @@ Cenarios = [
     Testes(1, 20, 0.5, 20, 200, 4),
     Testes(1, 20, 0.5, 10, 100, 4),
     Testes(1, 20, 0.5, 10, 300, 4),
+    Testes(1, 20, 0.5, 10, 200, 6),
+    Testes(5, 20, 0.5, 10, 200, 6),
+    Testes(10, 20, 0.5, 10, 200, 6),
+    Testes(1, 10, 0.5, 10, 200, 6),
+    Testes(1, 20, 0.5, 10, 200, 6),
+    Testes(1, 30, 0.5, 10, 200, 6),
+    Testes(1, 20, 1, 10, 200, 6),
+    Testes(1, 20, 2, 10, 200, 6),
+    Testes(1, 20, 0.5, 5, 200, 6),
+    Testes(1, 20, 0.5, 20, 200, 6),
+    Testes(1, 20, 0.5, 10, 100, 6),
+    Testes(1, 20, 0.5, 10, 300, 6),
+    Testes(1, 20, 0.5, 10, 200, 2),
+    Testes(5, 20, 0.5, 10, 200, 2),
+    Testes(10, 20, 0.5, 10, 200, 2),
+    Testes(1, 10, 0.5, 10, 200, 2),
+    Testes(1, 20, 0.5, 10, 200, 2),
+    Testes(1, 30, 0.5, 10, 200, 2),
+    Testes(1, 20, 1, 10, 200, 2),
+    Testes(1, 20, 2, 10, 200, 2),
+    Testes(1, 20, 0.5, 5, 200, 2),
+    Testes(1, 20, 0.5, 20, 200, 2),
+    Testes(1, 20, 0.5, 10, 100, 2),
+    Testes(1, 20, 0.5, 10, 300, 2),
 ]
 
 res = run(Cenarios)
