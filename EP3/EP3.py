@@ -23,6 +23,13 @@ class Testes:
         self.cabines_abertas = cabines_abertas
         self.tempo_simulacao = tempo_simulacao
 
+        self.chegadas = []
+        self.saidas = []
+        self.in_queue = []
+        self.in_system = []
+        self.horarios_nas_filas = []
+        self.tamanho_da_fila = []
+
         np.random.seed(seed=1)
         env = sp.Environment()
         self.pedagios = sp.Resource(env, capacity=self.cabines_abertas)
@@ -43,31 +50,82 @@ class Testes:
     def run_env(self):
         self.env.run(until=self.tempo_simulacao)
 
+    def config(self):
+        serie = {
+            "carros_por_tempo": self.carros_por_tempo,
+            "tempo_pedagio": self.tempo_pedagio,
+            "desvio_tempo_pedagio": self.desvio_tempo_pedagio,
+            "cabines_abertas": self.cabines_abertas,
+            "tempo_simulacao": self.tempo_simulacao
+        }
+        return serie
 
-'''Listas de dados'''
-chegadas, saidas = [], []
-in_queue, in_system = [], []
-horarios_nas_filas, tamanho_da_fila = [], []
+    def log_info_fila(self):
+        agora = self.env.now
+        tamanho_da_fila_agora = len(self.pedagios.queue)
+        self.horarios_nas_filas.append(agora)
+        self.tamanho_da_fila.append(tamanho_da_fila_agora)
+        return agora
 
+    def calcula_tempo_no_sistema(self, horario_chegada):
+        horario_saida = self.env.now
+        self.saidas.append(horario_saida)
+        tempo_total = horario_saida - horario_chegada
+        self.in_system.append(tempo_total)
 
-def log_info_fila(enviroment, pedagio):
-    agora = enviroment.now
-    tamanho_da_fila_agora = len(pedagio.queue)
-    horarios_nas_filas.append(agora)
-    tamanho_da_fila.append(tamanho_da_fila_agora)
-    return agora
+    def frame(self):
+        """
+        df = pd.DataFrame({
+            "Horário": self.horarios_nas_filas,
+            "Tamanho": self.tamanho_da_fila,
+            "Chegadas": self.chegadas,
+            "Partidas": self.saidas
+        })
+        return df
+        """
+        df1 = pd.DataFrame(self.horarios_nas_filas, columns=['Horário'])
+        df2 = pd.DataFrame(self.tamanho_da_fila, columns=['Tamanho'])
+        df3 = pd.DataFrame(self.chegadas, columns=['Chegadas'])
+        df4 = pd.DataFrame(self.saidas, columns=['Partidas'])
+        df = pd.concat([df1, df2, df3, df4], axis=1)
+        return df
+
+    def plot(self):
+        df = self.frame()
+        fig, ax = plt.subplots()
+        fig.set_size_inches(10, 5.4)
+
+        x1, y1 = list(df['Chegadas'].keys()), df['Chegadas']
+        x2, y2 = list(df['Partidas'].keys()), df['Partidas']
+
+        ax.plot(x1, y1, color='blue', marker="o", linewidth=0, label="Chegada")
+        ax.plot(x2, y2, color='red', marker="o", linewidth=0, label="Saída")
+        ax.set_xlabel('Tempo')
+        ax.set_ylabel('ID Carro')
+        ax.set_title("Chegadas & Saídas nos Pedágios")
+        ax.legend()
+
+        fig2, ax2 = plt.subplots()
+        fig2.set_size_inches(10, 5.4)
+
+        ax2.plot(df['Horário'], df['Tamanho'], color='blue', linewidth=1)
+        ax2.set_xlabel('Tempo')
+        ax2.set_ylabel('No Carros')
+        ax2.set_title('Número de carros na fila')
+        ax2.grid()
+
+        fig.show()
+        fig2.show()
+
+    def master(self):
+        self.run_env()
+        self.frame()
+        self.plot()
 
 
 def distribuicao_chegada_de_carros(teste: Testes):
     tempo_do_proximo_carro = expon.rvs(scale=teste.carros_por_tempo, size=1)
     return tempo_do_proximo_carro
-
-
-def calcula_tempo_no_sistema(enviroment, horario_chegada):
-    horario_saida = enviroment.now
-    saidas.append(horario_saida)
-    tempo_total = horario_saida - horario_chegada
-    in_system.append(tempo_total)
 
 
 def chegada_dos_carros(teste: Testes):
@@ -76,7 +134,7 @@ def chegada_dos_carros(teste: Testes):
         tempo_do_proximo_carro = distribuicao_chegada_de_carros(teste)
         yield teste.env.timeout(tempo_do_proximo_carro)
         tempo_de_chegada = teste.env.now
-        chegadas.append(tempo_de_chegada)
+        teste.chegadas.append(tempo_de_chegada)
         id_carro += 1
         print('%3d chegou no pedágio em %.2f' % (id_carro, tempo_de_chegada))
         teste.env.process(cobranca(id_carro, tempo_de_chegada, teste))
@@ -89,57 +147,24 @@ def tempo_de_cobranca(teste: Testes):
 def cobranca(id_carro, horario_chegada, teste: Testes):
     with teste.pedagios.request() as req:
         print('%3d entrou na fila em %.2f' % (id_carro, teste.env.now))
-        horario_entrada_da_fila = log_info_fila(teste.env, teste.pedagios)
+        horario_entrada_da_fila = teste.log_info_fila()
         yield req
 
         print('%3d saiu da fila em %.2f' % (id_carro, teste.env.now))
-        horario_saida_da_fila = log_info_fila(teste.env, teste.pedagios)
+        horario_saida_da_fila = teste.log_info_fila()
 
         tempo_na_fila = horario_saida_da_fila - horario_entrada_da_fila
-        in_queue.append(tempo_na_fila)
+        teste.in_queue.append(tempo_na_fila)
 
         tempo_pesagem = tempo_de_cobranca(teste)
         yield teste.env.timeout(tempo_pesagem)
         print('%3d permaneceu no sistema por %.2f' % (id_carro, tempo_pesagem))
 
-        calcula_tempo_no_sistema(teste.env, horario_chegada)
+        teste.calcula_tempo_no_sistema(horario_chegada)
 
 
 teste1 = Testes(2, 20, 0.5, 10, 200)
 print(teste1)
+print(teste1.config())
 teste1.run_env()
-
-
-'''Criação dos dataframes'''
-df1 = pd.DataFrame(horarios_nas_filas, columns=['horario'])
-df2 = pd.DataFrame(tamanho_da_fila, columns=['tamanho'])
-df3 = pd.DataFrame(chegadas, columns=['chegadas'])
-df4 = pd.DataFrame(saidas, columns=['partidas'])
-df_tamanho_da_fila = pd.concat([df1, df2], axis=1)
-df_entrada_saida = pd.concat([df3, df4], axis=1)
-
-'''Cofiguração dos plots'''
-fig, ax = plt.subplots()
-fig.set_size_inches(10, 5.4)
-
-x1, y1 = list(df_entrada_saida['chegadas'].keys()), df_entrada_saida['chegadas']
-x2, y2 = list(df_entrada_saida['partidas'].keys()), df_entrada_saida['partidas']
-
-ax.plot(x1, y1, color='blue', marker="o", linewidth=0, label="Chegada")
-ax.plot(x2, y2, color='red', marker="o", linewidth=0, label="Saída")
-ax.set_xlabel('Tempo')
-ax.set_ylabel('ID Carro')
-ax.set_title("Chegadas & Saídas nos Pedágios")
-ax.legend()
-
-fig2, ax2 = plt.subplots()
-fig2.set_size_inches(10, 5.4)
-
-ax2.plot(df_tamanho_da_fila['horario'], df_tamanho_da_fila['tamanho'], color='blue', linewidth=1)
-ax2.set_xlabel('Tempo')
-ax2.set_ylabel('No Carros')
-ax2.set_title('Número de carros na fila')
-ax2.grid()
-
-# fig.show()
-# fig2.show()
+teste1.plot()
